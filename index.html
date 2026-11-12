@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropLedger — Building Rental Cashbook</title>
+  <meta name="description" content="Simple personal building rental tracker for 7 units and 6 electricity meters." />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="assets/images/icon-192.png" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <!-- 4-Digit MPIN Lock Screen (Shown before panel) -->
+  <div id="mpin-screen" class="mpin-screen">
+    <div class="mpin-card">
+      <div class="mpin-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h2 id="mpin-building-title" class="mpin-title">PropLedger</h2>
+      <p class="mpin-sub">Enter 4-Digit MPIN to open panel</p>
+
+      <div id="mpin-boxes" class="mpin-boxes">
+        <input class="mpin-digit" type="password" inputmode="numeric" maxlength="1" pattern="[0-9]*" autocomplete="one-time-code" aria-label="MPIN digit 1" />
+        <input class="mpin-digit" type="password" inputmode="numeric" maxlength="1" pattern="[0-9]*" autocomplete="one-time-code" aria-label="MPIN digit 2" />
+        <input class="mpin-digit" type="password" inputmode="numeric" maxlength="1" pattern="[0-9]*" autocomplete="one-time-code" aria-label="MPIN digit 3" />
+        <input class="mpin-digit" type="password" inputmode="numeric" maxlength="1" pattern="[0-9]*" autocomplete="one-time-code" aria-label="MPIN digit 4" />
+      </div>
+
+      <div id="mpin-error" class="mpin-error hidden">Incorrect 4-digit MPIN. Try again.</div>
+
+      <div class="mpin-keypad" aria-label="MPIN Keypad">
+        <button type="button" class="mpin-key" data-k="1">1</button>
+        <button type="button" class="mpin-key" data-k="2">2</button>
+        <button type="button" class="mpin-key" data-k="3">3</button>
+        <button type="button" class="mpin-key" data-k="4">4</button>
+        <button type="button" class="mpin-key" data-k="5">5</button>
+        <button type="button" class="mpin-key" data-k="6">6</button>
+        <button type="button" class="mpin-key" data-k="7">7</button>
+        <button type="button" class="mpin-key" data-k="8">8</button>
+        <button type="button" class="mpin-key" data-k="9">9</button>
+        <button type="button" class="mpin-key mpin-key-fn" data-k="clear">Clear</button>
+        <button type="button" class="mpin-key" data-k="0">0</button>
+        <button type="button" class="mpin-key mpin-key-fn" data-k="back">&larr;</button>
+      </div>
+
+      <button id="mpin-unlock-btn" type="button" class="btn btn-primary" style="width:100%; margin-top:14px">Unlock Panel</button>
+      <p id="mpin-default-hint" class="mpin-hint hidden">Default MPIN: <strong>1234</strong> (change anytime in Settings)</p>
+    </div>
+  </div>
+
+  <div id="app" class="app-shell hidden">
+    <!-- Sidebar (Desktop & Mobile Drawer) -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+    <aside id="sidebar" class="sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="brand-logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span id="sidebar-building-name" class="brand-name">PropLedger</span>
+            <span class="brand-tag">7 Units · 6 Meters</span>
+          </div>
+        </div>
+        <button id="sidebar-close-btn" class="icon-btn mobile-only" aria-label="Close navigation">&times;</button>
+      </div>
+
+      <nav id="sidebar-nav" class="sidebar-nav"></nav>
+
+      <div class="sidebar-footer">
+        <button class="nav-item" id="nav-settings-btn" data-view="settings">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings &amp; Backup</span>
+        </button>
+        <div class="backup-status-line">
+          <span class="status-dot"></span>
+          <span id="sidebar-last-saved">Auto-saved</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="mobile-menu-btn" class="icon-btn mobile-only" aria-label="Menu">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <h1 id="page-title" class="page-title">Dashboard</h1>
+            <p id="page-subtitle" class="page-subtitle">7 Units · Personal Rental Register</p>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="topbar-install-btn" class="btn btn-primary btn-xs hidden" title="Install as Mobile / Desktop App">Install App</button>
+          <div id="demo-badge-wrap" class="demo-badge hidden">
+            <span>Demo</span>
+            <button id="clear-demo-quick-btn" class="demo-clear-link">Clear</button>
+          </div>
+          <button id="lock-panel-btn" class="icon-btn" title="Lock panel (MPIN)" aria-label="Lock panel">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </button>
+          <button id="theme-toggle-btn" class="icon-btn" title="Light / Dark theme" aria-label="Toggle theme">
+            <svg id="theme-icon-sun" class="hidden" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <svg id="theme-icon-moon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </button>
+          <button id="topbar-settings-btn" class="icon-btn mobile-only" title="Settings &amp; Backup" aria-label="Settings">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <main id="main-content" class="main-content" tabindex="-1"></main>
+    </div>
+
+    <!-- Mobile Bottom Navigation (4 items) -->
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="Mobile Navigation"></nav>
+  </div>
+
+  <!-- Modal / Bottom-Sheet Container -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div id="modal-dialog" class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Action</h2>
+        <button id="modal-close-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+      <div id="modal-footer" class="modal-footer hidden"></div>
+    </div>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirm-overlay" class="modal-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h2 id="confirm-title" class="modal-title">Confirm</h2>
+        <button id="confirm-close-btn" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="confirm-body" class="modal-body"></div>
+      <div class="modal-footer">
+        <button id="confirm-cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button id="confirm-ok-btn" class="btn btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Stack -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Simplified Modular Scripts -->
+  <script defer src="assets/js/helpers.js"></script>
+  <script defer src="assets/js/storage.js"></script>
+  <script defer src="assets/js/engine.js"></script>
+  <script defer src="assets/js/modals.js"></script>
+  <script defer src="assets/js/views.js"></script>
+  <script defer src="assets/js/app.js"></script>
+</body>
+</html>
